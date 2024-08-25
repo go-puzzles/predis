@@ -1,7 +1,7 @@
 package predis
 
 import (
-	"github.com/go-puzzles/dialer"
+	"github.com/go-puzzles/puzzles/dialer"
 	"github.com/gomodule/redigo/redis"
 )
 
