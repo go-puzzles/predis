@@ -123,6 +123,26 @@ func (rc *RedisClient) Delete(key string) error {
 	return err
 }
 
+// LockWithBlock attempts to acquire a lock with the given key in Redis,
+// retrying up to a specified maximum number of attempts (maxRetry).
+// If the lock cannot be acquired, it will wait for 500 milliseconds
+// before retrying, as long as the error returned is ErrLockFailed.
+//
+// The lock expiration time can be specified as a variadic argument;
+// if not provided, a default expiration time will be used.
+//
+// If the lock is successfully acquired, the method returns nil.
+// If the maximum number of retries is reached without acquiring the lock,
+// it returns ErrLockFailed.
+//
+// Parameters:
+// - key: The key under which the lock is to be stored.
+// - maxRetry: The maximum number of retry attempts to acquire the lock.
+// - expires: Optional duration(s) for which the lock should be valid.
+//
+// Returns:
+//   - An error if the lock could not be acquired after maxRetry attempts,
+//     or if another error occurred during the lock acquisition process.
 func (rc *RedisClient) LockWithBlock(key string, maxRetry int, expires ...time.Duration) (err error) {
 	for i := 0; i < maxRetry; i++ {
 		err = rc.Lock(key, expires...)
@@ -141,6 +161,23 @@ func (rc *RedisClient) LockWithBlock(key string, maxRetry int, expires ...time.D
 	return ErrLockFailed
 }
 
+// Lock attempts to acquire a lock with the given key in Redis.
+// If the lock is successfully acquired, it sets an expiration time.
+// The expiration time can be specified as a variadic argument; if not provided,
+// a default expiration time (defaultTTL) will be used.
+//
+// The lock is acquired using the Redis SET command with the "NX" option,
+// which ensures that the lock is only set if the key does not already exist.
+//
+// If the lock is already held (i.e., the key exists), the method returns
+// ErrLockFailed. If any other error occurs during the operation, it is returned.
+//
+// Parameters:
+// - key: The key under which the lock is to be stored.
+// - expires: Optional duration(s) for which the lock should be valid.
+//
+// Returns:
+// - An error, if the lock could not be acquired or another error occurred.
 func (rc *RedisClient) Lock(key string, expires ...time.Duration) (err error) {
 	expire := defaultTTL
 	if len(expires) != 0 {
